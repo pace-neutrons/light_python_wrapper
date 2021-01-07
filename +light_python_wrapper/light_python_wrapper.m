@@ -70,7 +70,11 @@ classdef light_python_wrapper < dynamicprops
                     varargout = py.getattr(obj.pyobj, s(1).subs{1});
                     ii = 1;
                     if numel(s) > 1 && strcmp(s(2).type, '()')
-                        varargout = varargout(s(2).subs);
+                        if isempty(s(2).subs)  % Otherwise passes empty cell to Python instead of nothing
+                            varargout = varargout();
+                        else
+                            varargout = varargout(s(2).subs);
+                        end
                         ii = 2;
                     end
                     if numel(s) > ii

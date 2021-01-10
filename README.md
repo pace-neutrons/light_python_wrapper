@@ -11,3 +11,9 @@ Hidden Python properties (which starts with `_`) can be accessed using brace not
 
 In addition, the `help` method is overloaded so that `help(obj)` will return the Python (`pydoc`) help information for that object, method or property.
 Note that `help obj` or `help class` will not work since this uses the in-built Matlab help system which does not know about the Python class.
+
+The `saveobj` and `loadobj` methods are also overloaded to serialise dependent Python objects using `pickle`,
+so they can be saved as to a Matlab `mat` file.
+Note that objects which cannot be pickled (which do not have a `__dict__` or `__[get/set]state__` methods) cannot be saved correctly.
+In these cases a warning will be given and a `mat` file will still be generated but it will not correctly reload.
+

@@ -57,7 +57,7 @@ classdef light_python_wrapper < dynamicprops
         function out = disp(obj)
             % Overloads the default information Matlab displays when the object is called
             repr_fun = py.getattr(obj.pyobj, '__repr__');
-            out = repr_fun();
+            out = char(repr_fun());
             if nargout == 0
                 disp(out);
             end
@@ -109,6 +109,62 @@ classdef light_python_wrapper < dynamicprops
             end
             if ~iscell(varargout)
                 varargout = {varargout};
+            end
+        end
+        function saved_obj = saveobj(obj)
+            % Pickles the Python object to a Matlab int array to save.
+            warn0 = warning;
+            warning('off');
+            saved_obj = struct(obj);
+            warning(warn0);
+            fnames = fieldnames(saved_obj);
+            savedfnames = {};
+            for ii = 1:numel(fnames)
+                if strncmp(class(saved_obj.(fnames{ii})), 'py.', 3)
+                    try
+                        saved_obj.(fnames{ii}) = uint8(py.pickle.dumps(saved_obj.(fnames{ii})));
+                    catch PyErr
+                        if ~isempty(strfind(PyErr.message, 'module objects'))
+                            saved_obj.(fnames{ii}) = ['python_module:' char(py.getattr(saved_obj.(fnames{ii}), '__name__'))];
+                        else
+                            rethrow(PyErr);
+                        end
+                    end
+                    savedfnames = [savedfnames fnames(ii)];
+                end
+            end
+            saved_obj.pyfields = savedfnames;
+            saved_obj.type = class(obj);
+            saved_obj.obj = obj;
+        end
+    end
+    methods(Static)
+        function loaded_obj = loadobj(obj)
+            if ~isstruct(obj);
+                loaded_obj = obj;
+                return;
+            end
+            do_populate = false;
+            try
+                loaded_obj = eval(obj.type);
+                do_populate = true;
+            catch
+                loaded_obj = obj.obj;
+            end
+            for ii = 1:numel(obj.pyfields)
+                try
+                    if isa(obj.(obj.pyfields{ii}), 'uint8')
+                        loaded_obj.(obj.pyfields{ii}) = py.pickle.loads(obj.(obj.pyfields{ii}));
+                    elseif strncmp(obj.(obj.pyfields{ii}), 'python_module:', 14)
+                        mod_name = obj.(obj.pyfields{ii})(15:end);
+                        loaded_obj.(obj.pyfields{ii}) = py.importlib.import_module(mod_name);
+                    end
+                catch
+                    warning(sprintf('Unable to load property %s from file', obj.pyfields{ii}));
+                end
+            end
+            if do_populate
+                loaded_obj.populate_props();
             end
         end
     end

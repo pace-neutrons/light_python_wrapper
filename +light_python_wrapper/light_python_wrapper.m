@@ -187,6 +187,7 @@ classdef light_python_wrapper < dynamicprops
         end
         function D = addprop(obj, propname)
             D = addprop@dynamicprops(obj, propname);
+            D.SetMethod = @(obj, val) py.setattr(obj.pyobj, propname, val);
         end
     end
 end

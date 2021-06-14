@@ -30,6 +30,12 @@ classdef light_python_wrapper < dynamicprops
                 out = parse_without_signature(args);
             end
         end
+        function out = redirect_python_warnings()
+            curdir = fileparts(mfilename('fullpath'));
+            insert(py.sys.path, int32(0), curdir);
+            py.importlib.import_module('redirect_python_warnings');
+            remove(py.sys.path, curdir);
+        end
     end
     methods
         function [out, docTopic] = help(obj)

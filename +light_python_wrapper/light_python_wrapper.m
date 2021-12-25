@@ -1,10 +1,11 @@
 classdef light_python_wrapper < dynamicprops
     % Abstract base class acting as a Matlab wrapper around a Python class
     properties(Abstract, Access=protected)
-        pyobj;  % Reference to python object
+        pyobj;     % Reference to python object
+        classname; % Class name as a string for access to help (e.g. module.class)
     end
     properties(Access=protected)
-        helpref;  % Reference to the python class for help info
+        helpref = -1;
         overrides = {};  % Cell of methods to override with Matlab method
     end
     methods(Static, Access=protected)
@@ -37,9 +38,23 @@ classdef light_python_wrapper < dynamicprops
             remove(py.sys.path, curdir);
         end
     end
+    methods(Static)
+        function class_ref = get_helpref(classname)
+            % Try to get the reference to the Python class we're wrapping
+            if isempty(classname), class_ref = []; return; end
+            [modulename, classname] = strtok(classname, '.');
+            [module_ref, class_ref] = import_fragment(modulename, classname);
+        end
+    end
     methods
+        function delete(obj)
+            try
+                py.del(obj.pyobj);
+            end
+        end
         function [out, docTopic] = help(obj)
             % Overloads the help function for this particular object to use the Python docstring
+            if obj.helpref == -1, obj.helpref = obj.get_helpref(obj.classname); end
             process = helpUtils.helpProcess(1, 1, {obj});
             if ~isempty(obj.pyobj)
                 helptxt = get_help(obj.pyobj);
@@ -202,6 +217,28 @@ function out = get_help(ref)
     out = char(py.getattr(ref, '__doc__'));
     if isa(out, 'py.NoneType')
         out = py.pydoc.render_doc(ref);
+    end
+end
+
+function [module, classname] = import_fragment(module, classname)
+    % Tries to get a Python reference to a classname by recursively importing
+    % larger chunks in a full classname string
+    try
+        module = py.importlib.import_module(module);
+    catch
+        [mod2, cls] = strtok(classname);
+        if isempty(cls)
+            return;
+        end
+        [module, classname] = import_fragment([module '.' mod2], cls(2:end));
+    end
+    if isa(module, 'py.module')
+        p2 = classname;
+        classname = module;
+        while p2 ~= ""
+            [p1, p2] = strtok(p2, '.');
+            classname = classname.(p1);
+        end
     end
 end
 

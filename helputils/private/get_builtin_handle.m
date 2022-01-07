@@ -1,8 +1,9 @@
 function handle = get_builtin_handle(fn_name)
     % Gets the handle to the builtin help function
     list = which(fn_name, '-all');
-    curfil = strcmp(list, [mfilename('fullpath') '.m']);
-    ishelp = cellfun(@(x)contains(x, fn_name '.m'), list);
+    outer_dir = fileparts(fileparts(mfilename('fullpath')));
+    curfil = strcmp(list, [outer_dir filesep fn_name '.m']);
+    ishelp = cellfun(@(x)contains(x, [fn_name '.m']), list);
     notmt = ~cellfun(@(x)contains(x, '@'), list);
     % Find first non-method function mfile in list which is not current file
     f = xor(curfil, ishelp) & notmt;

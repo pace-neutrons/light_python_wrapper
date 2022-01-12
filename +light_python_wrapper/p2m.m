@@ -23,14 +23,18 @@ function m = p2m(p)
         m = int64(p);
     elseif isa(p, 'light_python_wrapper.light_python_wrapper')
         m = light_python_wrapper.p2m(p.pyobj);
-    elseif isa(p, 'py.tuple')
-        m = p.cell;
+    elseif isa(p, 'py.tuple') || isa(p, 'py.list')
+        m = cell(p);
         for ii = 1:numel(m)
             m{ii} = light_python_wrapper.p2m(m{ii});
         end
+    elseif isa(p, 'py.set')
+        m = light_python_wrapper.p2m(py.list(p));
     elseif isnumeric(p)
         m = p;
-    else
+    elseif isa(p, 'py.str')
+        m = char(p);
+    elseif py.hasattr(p, 'dtype')
         if verLessThan('matlab','9.4') % before 2018a(?) For sure by 2018b=9.5
             warning('light_python_wrapper:p2m','Fast conversion of numpy.ndarrays not supported by this version of MATLAB. Consider upgrading.');
             ndim = int64(p.ndim);
@@ -94,5 +98,7 @@ function m = p2m(p)
                 m = double(p);
             end
         end
+    else
+        m = light_python_wrapper.generic_python_wrapper(p);
     end
 end

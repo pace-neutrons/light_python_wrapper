@@ -2,6 +2,7 @@ function [helptxt, class_summary] = python_help(ml_class, py_class, topic)
     % Uses the Python documentation system to get the help text
     get_ref = str2func(join([ml_class '.get_helpref'], ''));
     parent_class = py_class;
+    classname = regexprep(py_class, '.*\.', '');
     if ~strcmp(ml_class, topic)
         % The Python and Matlab class names can be different but
         % the method / properties after that should be the same.
@@ -9,10 +10,7 @@ function [helptxt, class_summary] = python_help(ml_class, py_class, topic)
         py_class = join([py_class part_topic], '');
     end
     py_ref = get_ref(py_class);
-    helptxt = char(py.getattr(py_ref, '__doc__'));
-    if isa(helptxt, 'py.NoneType')
-        helptxt = py.pydoc.render_doc(py_ref);
-    end
+    helptxt = light_python_wrapper.get_help(py_ref);
     % Add hyperlinks to class properties
     parent_ref = get_ref(parent_class);
     props = cellfun(@(m) char(m), cell(py.dir(parent_ref)), 'UniformOutput', false);
@@ -27,6 +25,8 @@ function [helptxt, class_summary] = python_help(ml_class, py_class, topic)
         if ~isa(child_docstr, 'py.NoneType')
             helptxt = regexprep(helptxt, sprintf('(%s)(\\s*[\\(:])', props{idx(ii)}), ...
                                 sprintf('<a href="matlab:help %s.$1">$1</a>$2', ml_class));
+            helptxt = strrep(helptxt, sprintf(' %s.%s ', classname, props{idx(ii)}), ...
+                             sprintf(' <a href="matlab:help %s.%s">%s.%s</a> ', ml_class, props{idx(ii)}, classname, props{idx(ii)}));
             blurb{ii} = strtrim(strtok(char(child_docstr), newline));
             ismethod(ii) = py.hasattr(child_ref, '__call__');
         end

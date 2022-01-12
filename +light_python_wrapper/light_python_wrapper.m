@@ -36,6 +36,7 @@ classdef light_python_wrapper < dynamicprops
             insert(py.sys.path, int32(0), curdir);
             py.importlib.import_module('redirect_python_warnings');
             remove(py.sys.path, curdir);
+            out = true;
         end
     end
     methods(Static)
@@ -48,26 +49,24 @@ classdef light_python_wrapper < dynamicprops
     end
     methods
         function delete(obj)
-            try
+            try %#ok<TRYNC>
                 py.del(obj.pyobj);
             end
         end
         function [out, docTopic] = help(obj)
             % Overloads the help function for this particular object to use the Python docstring
-            if obj.helpref == -1, obj.helpref = obj.get_helpref(obj.classname); end
-            process = helpUtils.helpProcess(1, 1, {obj});
             if ~isempty(obj.pyobj)
-                helptxt = get_help(obj.pyobj);
+                helptxt = light_python_wrapper.get_help(obj.pyobj);
                 if strcmp(helptxt, 'None') && ~isempty(obj.helpref)
-                    helptxt = get_help(obj.helpref);
+                    helptxt = light_python_wrapper.get_help(obj.helpref);
                 end
             elseif ~isempty(obj.helpref)
-                helptxt = get_help(obj.helpref);
+                helptxt = light_python_wrapper.get_help(obj.helpref);
             else
                 helptxt = sprintf(['Python object not found.\n' ...
                                    'Please construct the object and call help on it.']);
             end
-            docTopic = process.topic;
+            docTopic = disp(obj);
             if nargout > 0
                 out = helptxt;
             else
@@ -77,8 +76,12 @@ classdef light_python_wrapper < dynamicprops
         end
         function out = disp(obj)
             % Overloads the default information Matlab displays when the object is called
-            repr_fun = py.getattr(obj.pyobj, '__repr__');
-            out = char(repr_fun());
+            if isa(obj.pyobj, 'py.type')
+                out = char(obj.pyobj);
+            else
+                repr_fun = py.getattr(obj.pyobj, '__repr__');
+                out = char(repr_fun());
+            end
             if nargout == 0
                 disp(out);
             end
@@ -161,7 +164,7 @@ classdef light_python_wrapper < dynamicprops
     end
     methods(Static)
         function loaded_obj = loadobj(obj)
-            if ~isstruct(obj);
+            if ~isstruct(obj)
                 loaded_obj = obj;
                 return;
             end
@@ -181,7 +184,7 @@ classdef light_python_wrapper < dynamicprops
                         loaded_obj.(obj.pyfields{ii}) = py.importlib.import_module(mod_name);
                     end
                 catch
-                    warning(sprintf('Unable to load property %s from file', obj.pyfields{ii}));
+                    warning('Unable to load property %s from file', obj.pyfields{ii});
                 end
             end
             if do_populate
@@ -192,8 +195,9 @@ classdef light_python_wrapper < dynamicprops
     methods(Access=protected)
         function props = populate_props(obj)
             props = py.dir(obj.pyobj);
+            mprops = properties(obj);
             for ii = 1:double(py.len(props))
-                if ~props{ii}.startswith('_')
+                if ~props{ii}.startswith('_') && ~any(cellfun(@(c)strcmp(props{ii}.char, c), mprops))
                     % Adds property names here so tab-completion works.
                     % But actually overload subsref so call Python directly. (So matlab properties are empty.)
                     obj.addprop(props{ii}.char);
@@ -210,13 +214,6 @@ classdef light_python_wrapper < dynamicprops
             D = addprop@dynamicprops(obj, propname);
             D.SetMethod = @(obj, val) py.setattr(obj.pyobj, propname, val);
         end
-    end
-end
-
-function out = get_help(ref)
-    out = char(py.getattr(ref, '__doc__'));
-    if isa(out, 'py.NoneType')
-        out = py.pydoc.render_doc(ref);
     end
 end
 
@@ -418,7 +415,7 @@ end
 
 function out = get_correct_type(pname, pval, sigs)
     % Looks through Python signatures and converts Matlab types of correct Python types 
-    sigidx = find(cellfun(@(c) strcmp(pname, c), {sigs.name}));
+    sigidx = cellfun(@(c) strcmp(pname, c), {sigs.name});
     py_type = class(sigs(sigidx).default);
     out = pval;
     if is_simple_python(py_type)

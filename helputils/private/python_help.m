@@ -19,17 +19,32 @@ function [helptxt, class_summary] = python_help(ml_class, py_class, topic)
     idx = find(cellfun(@(m) ~startsWith(m, '_'), cell(props)));
     blurb = cell(1, numel(idx));
     ismethod = zeros(1, numel(idx));
+    no_link = ones(1, numel(idx));
     for ii = 1:numel(idx)
-        child_ref = py.getattr(parent_ref, props{idx(ii)});
-        child_docstr = py.getattr(child_ref, '__doc__');
+        try
+            child_ref = py.getattr(parent_ref, props{idx(ii)});
+            child_docstr = py.getattr(child_ref, '__doc__');
+        catch
+            child_docstr = py.NoneType;
+        end
         if ~isa(child_docstr, 'py.NoneType')
-            helptxt = regexprep(helptxt, sprintf('(%s)(\\s*[\\(:])', props{idx(ii)}), ...
-                                sprintf('<a href="matlab:help %s.$1">$1</a>$2', ml_class));
-            helptxt = strrep(helptxt, sprintf(' %s.%s ', classname, props{idx(ii)}), ...
-                             sprintf(' <a href="matlab:help %s.%s">%s.%s</a> ', ml_class, props{idx(ii)}, classname, props{idx(ii)}));
+            if strncmp(class(child_ref), 'py.', 3)
+                helptxt = regexprep(helptxt, sprintf('(%s)(\\s*[\\(:])', props{idx(ii)}), ...
+                                    sprintf('<a href="matlab:help %s.$1">$1</a>$2', ml_class));
+                helptxt = strrep(helptxt, sprintf(' %s.%s ', classname, props{idx(ii)}), ...
+                                 sprintf(' <a href="matlab:help %s.%s">%s.%s</a> ', ml_class, props{idx(ii)}, classname, props{idx(ii)}));
+                no_link(ii) = 0;
+            end
             blurb{ii} = strtrim(strtok(char(child_docstr), newline));
             ismethod(ii) = py.hasattr(child_ref, '__call__');
         end
+    end
+    if numel(idx) > 100
+        not_empty = (~cellfun(@isempty, blurb)) | ismethod;
+        idx = idx(not_empty);
+        blurb = blurb(not_empty);
+        ismethod = ismethod(not_empty);
+        no_link = no_link(not_empty);
     end
     class_summary = cell(1,2);
     if strcmp(parent_class, py_class)
@@ -37,7 +52,7 @@ function [helptxt, class_summary] = python_help(ml_class, py_class, topic)
         for ii = 1:numel(isrt)
             if ~isempty(blurb{isrt(ii)}), docstr = blurb{isrt(ii)}; else, docstr = ''; end
             if ismethod(isrt(ii)), icl = 2; else, icl = 1; end
-            class_summary{icl} = cat(1, class_summary{icl}, [props(idx(isrt(ii))) {docstr}]);
+            class_summary{icl} = cat(1, class_summary{icl}, [props(idx(isrt(ii))) {docstr no_link(isrt(ii))}]);
         end
     end
 end

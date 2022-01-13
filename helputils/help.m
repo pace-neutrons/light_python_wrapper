@@ -85,9 +85,10 @@ function out = print_class_summary(class_summary, topic)
         for ii = 1:size(class_summary{icl},1)
             name_str = class_summary{icl}{ii,1};
             sum_str = class_summary{icl}{ii,2};
-            if ~isempty(sum_str)
+            no_link = class_summary{icl}{ii,3};
+            if ~isempty(sum_str) && ~no_link
                 pstr = sprintf('%%%is', lmax - numel(name_str));
-                name_str = sprintf(['<a href="matlab:help %s.%s">%s</a>' pstr], topic, name_str, name_str, '');
+                name_str = sprintf([pstr '<a href="matlab:help %s.%s">%s</a>'], '', topic, name_str, name_str);
             end
             out = [out sprintf(['   ' lstr ' - %s\n'], name_str, sum_str)];
         end

@@ -234,7 +234,7 @@ function [module, classname] = import_fragment(module, classname)
         classname = module;
         while p2 ~= ""
             [p1, p2] = strtok(p2, '.');
-            classname = classname.(p1);
+            classname = py.getattr(classname, p1);
         end
     end
 end

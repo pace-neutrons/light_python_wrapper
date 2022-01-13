@@ -65,7 +65,8 @@ function doc_python(helpStr, class_summary, topic)
             for ii = 1:size(class_summary{icl},1)
                 name_str = class_summary{icl}{ii,1};
                 sum_str = class_summary{icl}{ii,2};
-                if ~isempty(sum_str)
+                no_link = class_summary{icl}{ii,3};
+                if ~isempty(sum_str) && ~no_link
                     name_str = sprintf('<a href="matlab:doc %s.%s">%s</a>', topic, name_str, name_str);
                 end
                 pstr = join([pstr {h1 sprintf(d1, name_str) sprintf(d2, sum_str) h2}], newline);

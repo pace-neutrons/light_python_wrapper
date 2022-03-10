@@ -15,26 +15,7 @@
 % along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 function m = p2m(p)
-    if isa(p,'py.complex') % a scalar
-        m = py.numpy.array(p).tolist(); % MATLAB converts the one element list to a complex number automatically
-    elseif contains(class(p),'uint','IgnoreCase',true)
-        m = uint64(p);
-    elseif contains(class(p),'int','IgnoreCase',true)
-        m = int64(p);
-    elseif isa(p, 'light_python_wrapper.light_python_wrapper')
-        m = light_python_wrapper.p2m(p.pyobj);
-    elseif isa(p, 'py.tuple') || isa(p, 'py.list')
-        m = cell(p);
-        for ii = 1:numel(m)
-            m{ii} = light_python_wrapper.p2m(m{ii});
-        end
-    elseif isa(p, 'py.set')
-        m = light_python_wrapper.p2m(py.list(p));
-    elseif isnumeric(p)
-        m = p;
-    elseif isa(p, 'py.str')
-        m = char(p);
-    elseif py.hasattr(p, 'dtype')
+    if py.hasattr(p, 'dtype')
         vers = version();
         is_old_version = sscanf(vers(1:3), '%f') < 9.4; % before 2018a(?) For sure by 2018b=9.5
         if is_old_version
@@ -60,7 +41,9 @@ function m = p2m(p)
             end
         else
             eltype = lower(string(p.dtype.name));
-            if contains(eltype,'complex')
+            if contains(eltype,'float')
+                m = double(p);
+            elseif contains(eltype,'complex')
                 rp = py.numpy.array(p.real);
                 ip = py.numpy.array(p.imag);
                 eltype = lower(string(rp.dtype.name));
@@ -100,6 +83,25 @@ function m = p2m(p)
                 m = double(p);
             end
         end
+    elseif isa(p,'py.complex') % a scalar
+        m = py.numpy.array(p).tolist(); % MATLAB converts the one element list to a complex number automatically
+    elseif contains(class(p),'uint','IgnoreCase',true)
+        m = uint64(p);
+    elseif contains(class(p),'int','IgnoreCase',true)
+        m = int64(p);
+    elseif isa(p, 'light_python_wrapper.light_python_wrapper')
+        m = light_python_wrapper.p2m(p.pyobj);
+    elseif isa(p, 'py.tuple') || isa(p, 'py.list')
+        m = cell(p);
+        for ii = 1:numel(m)
+            m{ii} = light_python_wrapper.p2m(m{ii});
+        end
+    elseif isa(p, 'py.set')
+        m = light_python_wrapper.p2m(py.list(p));
+    elseif isnumeric(p)
+        m = p;
+    elseif isa(p, 'py.str')
+        m = char(p);
     else
         m = light_python_wrapper.generic_python_wrapper(p);
     end

@@ -46,7 +46,9 @@ else
             p = m;
     end
     if ~isscalar(m) && ~ischar(m)
-        if verLessThan('matlab','9.5')
+        vers = version();
+        is_old_version = sscanf(vers(1:3), '%f') < 9.5
+        if is_old_version
             p = py.numpy.array(transpose(p(:)));
             if neversqueeze || any( size(m)~=1 & size(m)~=numel(m) )
                 p=p.reshape( int64(size(m)) );

@@ -35,7 +35,9 @@ function m = p2m(p)
     elseif isa(p, 'py.str')
         m = char(p);
     elseif py.hasattr(p, 'dtype')
-        if verLessThan('matlab','9.4') % before 2018a(?) For sure by 2018b=9.5
+        vers = version();
+        is_old_version = sscanf(vers(1:3), '%f') < 9.4; % before 2018a(?) For sure by 2018b=9.5
+        if is_old_version
             warning('light_python_wrapper:p2m','Fast conversion of numpy.ndarrays not supported by this version of MATLAB. Consider upgrading.');
             ndim = int64(p.ndim);
             nmel = int64(p.size);

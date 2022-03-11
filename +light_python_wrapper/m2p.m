@@ -46,8 +46,11 @@ else
             p = m;
     end
     if ~isscalar(m) && ~ischar(m)
-        vers = version();
-        is_old_version = sscanf(vers(1:3), '%f') < 9.5
+        persistent is_old_version;
+        if isempty(is_old_version)
+            vers = version();
+            is_old_version = sscanf(vers(1:3), '%f') < 9.5;
+        end
         if is_old_version
             p = py.numpy.array(transpose(p(:)));
             if neversqueeze || any( size(m)~=1 & size(m)~=numel(m) )

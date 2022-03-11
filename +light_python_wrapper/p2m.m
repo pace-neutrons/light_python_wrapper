@@ -15,9 +15,13 @@
 % along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 function m = p2m(p)
-    if py.hasattr(p, 'dtype')
-        vers = version();
-        is_old_version = sscanf(vers(1:3), '%f') < 9.4; % before 2018a(?) For sure by 2018b=9.5
+    ptype = lower(class(p));
+    if strcmp(ptype,'py.numpy.ndarray')
+        persistent is_old_version;
+        if isempty(is_old_version)
+            vers = version();
+            is_old_version = sscanf(vers(1:3),'%f') < 9.4; % before 2018a(?) For sure by 2018b=9.5
+        end
         if is_old_version
             warning('light_python_wrapper:p2m','Fast conversion of numpy.ndarrays not supported by this version of MATLAB. Consider upgrading.');
             ndim = int64(p.ndim);
@@ -83,24 +87,24 @@ function m = p2m(p)
                 m = double(p);
             end
         end
-    elseif isa(p,'py.complex') % a scalar
+    elseif strcmp(ptype,'py.complex') % a scalar
         m = py.numpy.array(p).tolist(); % MATLAB converts the one element list to a complex number automatically
-    elseif contains(class(p),'uint','IgnoreCase',true)
+    elseif contains(ptype,'uint')
         m = uint64(p);
-    elseif contains(class(p),'int','IgnoreCase',true)
+    elseif contains(ptype,'int')
         m = int64(p);
-    elseif isa(p, 'light_python_wrapper.light_python_wrapper')
+    elseif strcmp(ptype,'light_python_wrapper.light_python_wrapper')
         m = light_python_wrapper.p2m(p.pyobj);
-    elseif isa(p, 'py.tuple') || isa(p, 'py.list')
+    elseif strcmp(ptype,'py.tuple') || strcmp(ptype,'py.list')
         m = cell(p);
         for ii = 1:numel(m)
             m{ii} = light_python_wrapper.p2m(m{ii});
         end
-    elseif isa(p, 'py.set')
+    elseif strcmp(ptype,'py.set')
         m = light_python_wrapper.p2m(py.list(p));
     elseif isnumeric(p)
         m = p;
-    elseif isa(p, 'py.str')
+    elseif strcmp(ptype,'py.str')
         m = char(p);
     else
         m = light_python_wrapper.generic_python_wrapper(p);

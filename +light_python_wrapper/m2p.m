@@ -15,6 +15,7 @@
 % along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 function p = m2p(m,dtype,neversqueeze)
+persistent is_old_version;
 if nargin<3 || isempty(neversqueeze) || ~islogical(neversqueeze)
     neversqueeze = false;
 end
@@ -46,10 +47,8 @@ else
             p = m;
     end
     if ~isscalar(m) && ~ischar(m)
-        persistent is_old_version;
         if isempty(is_old_version)
-            vers = version();
-            is_old_version = sscanf(vers(1:3), '%f') < 9.5;
+            is_old_version = verLessThan('matlab', '9.5');
         end
         if is_old_version
             p = py.numpy.array(transpose(p(:)));

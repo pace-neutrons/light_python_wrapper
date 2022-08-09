@@ -48,7 +48,7 @@ else
     end
     if ~isscalar(m) && ~ischar(m)
         if isempty(is_old_version)
-            is_old_version = verLessThan('matlab', '9.5');
+            is_old_version = verLessThan('matlab', '9.6');
         end
         if is_old_version
             p = py.numpy.array(transpose(p(:)));

@@ -1,6 +1,12 @@
 `Unreleased <https://github.com/pace-neutrons/light_python_wrapper/compare/v0.3.0...HEAD>`_
 ----------
 
+- Improvements:
+  
+  - Automatic conversion to ``int`` using the function signature will now use the type
+    annotations, then the default value if no annotation is present. ``Optional[int]``
+    values will be converted to ``int``.
+
 `v0.3.0 <https://github.com/pace-neutrons/light_python_wrapper/compare/v0.2.2...v0.3.0>`_
 ------
 

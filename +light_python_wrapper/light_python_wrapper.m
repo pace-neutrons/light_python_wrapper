@@ -431,9 +431,10 @@ function out = get_correct_type(pname, pval, sigs)
             % If annotation is Optional[int] (equivalent to Union[int, None])
             % and given value is not None, set type to int
             annotation_repr = py.getattr(par.annotation, '__repr__');
-            if contains(string(annotation_repr()), 'Union')
-                union_args = py.set(py.getattr(par.annotation, '__args__'));
-                if union_args == py.set({py.type(py.int), py.type(py.None)}) && ...
+            if contains(string(annotation_repr()), 'Union') || ...
+               contains(string(annotation_repr()), 'Optional')
+                annotation_args = py.set(py.getattr(par.annotation, '__args__'));
+                if annotation_args == py.set({py.type(py.int), py.type(py.None)}) && ...
                         pval ~= py.None
                     py_type = 'int';
                 end

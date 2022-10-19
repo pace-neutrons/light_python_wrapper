@@ -416,8 +416,40 @@ end
 function out = get_correct_type(pname, pval, sigs)
     % Looks through Python signatures and converts Matlab types of correct Python types 
     sigidx = cellfun(@(c) strcmp(pname, c), {sigs.name});
-    py_type = class(sigs(sigidx).default);
     out = pval;
+    par = sigs(sigidx);
+    % Inspect type annotation first
+    % Returned type if no annotation present - set as default type
+    py_type_no_annotation = py.getattr(...
+        py.getattr(py.inspect.Signature, 'empty'), '__name__');
+    py_type = py_type_no_annotation;
+    try
+        % Annotations from py.typing module do not have __name__
+        py_type = py.getattr(par.annotation, '__name__');
+    catch ME
+        if contains(ME.message, 'AttributeError')
+            % If annotation is Optional[int] (equivalent to Union[int, None])
+            % and given value is not None, set type to int
+            annotation_repr = py.getattr(par.annotation, '__repr__');
+            if contains(string(annotation_repr()), 'Union') || ...
+               contains(string(annotation_repr()), 'Optional')
+                annotation_args = py.set(py.getattr(par.annotation, '__args__'));
+                if annotation_args == py.set({py.type(py.int), py.type(py.None)}) && ...
+                        pval ~= py.None
+                    py_type = 'int';
+                end
+            end
+        else
+            rethrow(ME);
+        end
+    end
+    if py_type == py_type_no_annotation
+         % If no type annotation, use type of default value
+        py_type = class(par.default);
+    else
+        % Using __name__ does not prepend py., do it here
+        py_type = ['py.' char(py_type)];
+    end
     if is_simple_python(py_type)
         if strcmp(py_type, 'py.int') || strcmp(py_type, 'py.long')
             out = int64(pval);

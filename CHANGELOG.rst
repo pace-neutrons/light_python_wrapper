@@ -7,6 +7,12 @@
     annotations, then the default value if no annotation is present. ``Optional[int]``
     values will be converted to ``int``.
 
+- Bug fixes:
+
+  - In some distributions of MATLAB the automatic conversion from Numpy ``ndarray`` using
+    MATLAB's ``double`` does not work. If it fails, convert to a regular ``py.array``
+    first, this should be more reliable.
+
 `v0.3.0 <https://github.com/pace-neutrons/light_python_wrapper/compare/v0.2.2...v0.3.0>`_
 ------
 

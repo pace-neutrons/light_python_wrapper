@@ -47,33 +47,33 @@ function m = p2m(p)
         else
             eltype = lower(string(p.dtype.name));
             if contains(eltype,'float')
-                m = double(p);
+                m = ndarray_to_double(p);
             elseif contains(eltype,'complex')
                 rp = py.numpy.array(p.real);
                 ip = py.numpy.array(p.imag);
                 eltype = lower(string(rp.dtype.name));
                 if contains(eltype,'uint')
-                    rp = uint64(rp);
-                    ip = uint64(ip);
+                    rp = ndarray_to_uint(rp);
+                    ip = ndarray_to_uint(ip);
                 elseif contains(eltype,'int')
-                    rp = int64(rp);
-                    ip = int64(ip);
+                    rp = ndarray_to_int(rp);
+                    ip = ndarray_to_int(ip);
                 else
-                    rp = double(rp);
-                    ip = double(ip);
+                    rp = ndarray_to_double(rp);
+                    ip = ndarray_to_double(ip);
                 end
                 m = complex( rp, ip );
             elseif contains(eltype,'uint')
-                m = uint64( p );
+                m = ndarray_to_uint( p );
             elseif contains(eltype,'int')
-                m = int64(p);
+                m = ndarray_to_int(p);
             elseif contains(eltype,'str')
-                ndim = int64(p.ndim);
-                nmel = int64(p.size);
+                ndim = ndarray_to_int(p.ndim);
+                nmel = ndarray_to_int(p.size);
                 if ndim>1
                     toshape = zeros(1,ndim);
                     for i=1:ndim
-                        toshape(i) = int64(p.shape{i});
+                        toshape(i) = ndarray_to_int(p.shape{i});
                     end
                     p = p.reshape(nmel);
                 else
@@ -85,7 +85,7 @@ function m = p2m(p)
                     m{i} = char(plist{i});
                 end
             else
-                m = double(p);
+                m = ndarray_to_double(p);
             end
         end
     elseif strcmp(ptype,'py.complex') % a scalar
@@ -109,5 +109,29 @@ function m = p2m(p)
         m = char(p);
     else
         m = light_python_wrapper.generic_python_wrapper(p);
+    end
+end
+
+function out = ndarray_to_double(in)
+    try
+        out = double(in);
+    catch
+        out = double(py.array.array('d', in));
+    end
+end
+
+function out = ndarray_to_int(in)
+    try
+        out = int64(in);
+    catch
+        out = int64(py.array.array('i', in));
+    end
+end
+
+function out = ndarray_to_uint(in)
+    try
+        out = uint64(in);
+    catch
+        out = uint64(py.array.array('I', in));
     end
 end

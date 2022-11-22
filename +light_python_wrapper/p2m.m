@@ -47,33 +47,33 @@ function m = p2m(p)
         else
             eltype = lower(string(p.dtype.name));
             if contains(eltype,'float')
-                m = ndarray_to_double(p);
+                m = ndarray_to_matlab(p, 'double');
             elseif contains(eltype,'complex')
                 rp = py.numpy.array(p.real);
                 ip = py.numpy.array(p.imag);
                 eltype = lower(string(rp.dtype.name));
                 if contains(eltype,'uint')
-                    rp = ndarray_to_uint(rp);
-                    ip = ndarray_to_uint(ip);
+                    rp = ndarray_to_matlab(rp, 'uint64');
+                    ip = ndarray_to_matlab(ip, 'uint64');
                 elseif contains(eltype,'int')
-                    rp = ndarray_to_int(rp);
-                    ip = ndarray_to_int(ip);
+                    rp = ndarray_to_matlab(rp, 'int64');
+                    ip = ndarray_to_matlab(ip, 'int64');
                 else
-                    rp = ndarray_to_double(rp);
-                    ip = ndarray_to_double(ip);
+                    rp = ndarray_to_matlab(rp, 'double');
+                    ip = ndarray_to_matlab(ip, 'double');
                 end
                 m = complex( rp, ip );
             elseif contains(eltype,'uint')
-                m = ndarray_to_uint( p );
+                m = ndarray_to_matlab(p, 'uint64');
             elseif contains(eltype,'int')
-                m = ndarray_to_int(p);
+                m = ndarray_to_matlab(p, 'int64');
             elseif contains(eltype,'str')
-                ndim = ndarray_to_int(p.ndim);
-                nmel = ndarray_to_int(p.size);
+                ndim = ndarray_to_matlab(p.ndim, 'int64');
+                nmel = ndarray_to_matlab(p.size, 'int64');
                 if ndim>1
                     toshape = zeros(1,ndim);
                     for i=1:ndim
-                        toshape(i) = ndarray_to_int(p.shape{i});
+                        toshape(i) = ndarray_to_matlab(p.shape{i}, 'int64');
                     end
                     p = p.reshape(nmel);
                 else
@@ -85,7 +85,7 @@ function m = p2m(p)
                     m{i} = char(plist{i});
                 end
             else
-                m = ndarray_to_double(p);
+                m = ndarray_to_matlab(p, 'double');
             end
         end
     elseif strcmp(ptype,'py.complex') % a scalar
@@ -112,26 +112,13 @@ function m = p2m(p)
     end
 end
 
-function out = ndarray_to_double(in)
+function ml_array = ndarray_to_matlab(ndarray, ml_arr_type)
+    type_map = containers.Map({'double', 'int64', 'uint64'}, ...
+                              {'d', 'i', 'I'});
+    ml_func = str2func(ml_arr_type);
     try
-        out = double(in);
+        ml_array = ml_func(ndarray);
     catch
-        out = double(py.array.array('d', in));
-    end
-end
-
-function out = ndarray_to_int(in)
-    try
-        out = int64(in);
-    catch
-        out = int64(py.array.array('i', in));
-    end
-end
-
-function out = ndarray_to_uint(in)
-    try
-        out = uint64(in);
-    catch
-        out = uint64(py.array.array('I', in));
+        ml_array = ml_func(py.array.array(type_map(ml_arr_type), ndarray));
     end
 end

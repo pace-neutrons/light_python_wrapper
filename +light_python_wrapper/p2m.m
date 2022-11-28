@@ -119,6 +119,10 @@ function ml_array = ndarray_to_matlab(ndarray, ml_arr_type)
     try
         ml_array = ml_func(ndarray);
     catch
-        ml_array = ml_func(py.array.array(type_map(ml_arr_type), ndarray));
+        ml_array = ml_func(py.array.array(type_map(ml_arr_type), ndarray.flatten()));
+        if length(ndarray.shape) > 1
+            ml_shape = int64(py.array.array('i', ndarray.shape));
+            ml_array = reshape(ml_array, ml_shape);
+        end
     end
 end

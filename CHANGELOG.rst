@@ -1,4 +1,7 @@
-`Unreleased <https://github.com/pace-neutrons/light_python_wrapper/compare/v0.3.0...HEAD>`_
+`Unreleased <https://github.com/pace-neutrons/light_python_wrapper/compare/v0.4.0...HEAD>`_
+----------
+
+`v0.4.0 <https://github.com/pace-neutrons/light_python_wrapper/compare/v0.3.0...v0.4.0>`_
 ----------
 
 - Improvements:

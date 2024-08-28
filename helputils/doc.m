@@ -29,6 +29,10 @@ function doc(varargin)
 end
 
 function doc_python(helpStr, class_summary, topic)
+    persistent isOlder2020b
+    if isempty(isOlder2020b)
+        isOlder2020b = verLessThan('matlab', '9.13');
+    end
     helpStr = regexprep(helpStr, ...
         '<a href="matlab:help ', '<a href="matlab:doc ');
     % Creates a blank html using Matlab internals
@@ -38,7 +42,12 @@ function doc_python(helpStr, class_summary, topic)
     child = dom.createElement('css-file');
     child.appendChild(dom.createTextNode(includesFile));
     dom.getDocumentElement.appendChild(child);    
-    xslfile = fullfile(fileparts(which('help2html')),'private','helpwin.xsl');
+    xslroot = fullfile(matlabroot, 'toolbox', 'matlab', 'helptools');
+    if isOlder2020b
+        xslfile = fullfile(xslroot, 'private', 'helpwin.xsl');
+    else
+        xslfile = fullfile(xslroot, '+matlab', '+internal', '+doc', '+project', 'private', 'helpwin.xsl');
+    end
     html = xslt(dom, xslfile, '-tostring');
     % Add the help string, and if it is a class the class summary
     html = regexprep(html, '(<title>)(</title>)', sprintf('$1%s - MATLAB File Help$2', topic));

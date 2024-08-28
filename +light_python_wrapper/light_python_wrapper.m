@@ -375,7 +375,15 @@ function sig_struct = get_signatures(fun_ref)
         sigs(ii).name = par.name.char;
         sigs(ii).kind = par.kind.char;
         sigs(ii).default = par.default;
-        sigs(ii).annotation = par.annotation;
+        try
+            sigs(ii).annotation = par.annotation;
+        catch ME
+            if strcmp(ME.identifier, 'MATLAB:class:DuplicateSuperClass')
+                sigs(ii).annotation = py.getattr(py.inspect.Signature, 'empty');
+            else
+                rethrow(ME);
+            end
+        end
         if isa(par.default, 'py.type')
             sigs(ii).has_default = ~strcmp(par.default.char, "<class 'inspect._empty'>");
         else
